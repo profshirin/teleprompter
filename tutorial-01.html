@@ -94,9 +94,9 @@ body.active:not(.awake) #bar:not(:focus-within) { opacity: .1; }
       <h2><small>Opening</small>Welcome</h2>
       <p>Hello and welcome to Module 3. In this video I'll walk you through Tutorials 1 to 11 from the notes. Have the notes open next to Tableau so you can follow along. I will put links to each tutorial in the description.</p>
       <h3>Business angle</h3>
-      <p>Before we click anything, let me tell you why this matters. A spreadsheet or a query result is not something you hand to a vice president. They want a chart that updates every morning, or a dashboard they can click through on their own. That's what tools like Tableau and Power BI are for, and you'll see one of them in almost every analyst job posting.</p>
-      <p>Our data this module comes from a hip implant manufacturer with five sites. Each site buys raw materials from suppliers and sells finished implants to hospitals. So we can ask two kinds of questions. What are we buying, and what are we selling?</p>
-      <p>If you downloaded the ready workbook from Canvas, you can jump ahead to Tutorial 5. If you'd like to build it yourself, I really encourage that, because that's how data shows up on the job. Nobody hands you a finished workbook. So stay with me from the start.</p>
+      <p>Before we click anything, let me tell you why this module matters. A spreadsheet or a query result is not something you hand to a vice president. They want a chart that updates every morning, or a dashboard they can click through on their own. That's what tools like Tableau and Power BI are for, and you'll see one of them in almost every analyst job posting.</p>
+      <p>Our data for this module comes from a hip implant manufacturer with five sites. Each site buys raw materials from suppliers and sells finished implants to hospitals. So we can ask two kinds of questions. What are we buying, and what are we selling?</p>
+      <p>If you downloaded workbook with the data already loaded from Canvas, you can jump ahead to Tutorial 5. If you'd like to build it yourself, stay with me and follow along.  I  encourage you to do that because that's how data shows up on the job.</p>
       <div class="pause">PAUSE</div>
     </section>
 <section class="seg" id="t1" data-label="Tutorial 1. Connecting to the data">
@@ -109,18 +109,8 @@ body.active:not(.awake) #bar:not(:focus-within) { opacity: .1; }
       <p class="do">Data Source page. Point to the preview. Update Now if empty.</p>
       <p>Now we're on the Data Source page. Down at the bottom you can see a preview of the first thousand rows. If yours looks empty, just click Update Now.</p>
       <p class="do">Click a column header to sort. Scroll the preview.</p>
-      <p>Take a second and just look at the data. Do the dates look right? Anything strange? Here's a little trick. Click a column header to sort it, and any blank values jump to the top or the bottom, so they're easy to spot.</p>
-      <p>We'll add the other five files later, as joins. For now, it's just Transactions.</p>
-
-      <h3>Heads up, field names</h3>
-      <p>Now in the notes you'll see a box called Heads up, field names. Tableau shows underscores as spaces. So the file says TR underscore TransDate, but Tableau shows TR TransDate. Don't let that throw you. It's the same field.</p>
-
-      <h3>Sheets, dashboards, and stories</h3>
-      <p class="do">Point to the tabs at the bottom.</p>
-      <p>The next box is Sheets, dashboards, and stories. See these tabs along the bottom? A sheet is one chart, kind of like one Excel worksheet. A dashboard puts a few sheets together on one screen. And a story walks someone through your analysis, step by step.</p>
-      <p class="do">Point to the three small icons next to the sheet tabs.</p>
-      <p>Next to the tabs there are three little icons. They make a new sheet, a new dashboard, and a new story. And the Data Source tab, all the way on the left, always takes you back to the page we were just on.</p>
-
+      <p>Take a second and just look at the data. Do the dates look right? Anything strange? You can click a column header to sort it, and any blank values jump to the top or the bottom, so they're easy to spot.</p>
+      <p>We'll add the other five files later, as joins. For now, it's just Transactions.</p>     
       <h3>A quick tour of the workspace</h3>
       <p class="do">Click Sheet 1. Wait for the empty worksheet.</p>
       <p>Before we build anything, let me give you a quick tour, so you know what everything is called. I'll click Sheet 1. This is where all the charts happen. I'll go around the screen with you.</p>
@@ -141,7 +131,7 @@ body.active:not(.awake) #bar:not(:focus-within) { opacity: .1; }
       <p class="do">Point to the Filters shelf.</p>
       <p>Below that is Filters. Anything you drag here limits what the chart shows. For example, only purchases, or only 2015. We'll use filters all the time.</p>
       <p class="do">Point to the Marks card and each button on it.</p>
-      <p>And below that is the Marks card. This controls how each piece of data is drawn. The dropdown at the top sets the chart type, like bar, line, or circle. Then the buttons. Color, Size, and Label. Detail, which splits the data finer without adding a new row or column. And Tooltip, which is what pops up when you hover. When you have text in a table, the Label button says Text instead. That's the one we'll use in a minute.</p>
+      <p>And below that is the Marks card. This controls how each piece of data is drawn. The dropdown at the top sets the chart type, like bar, line, or circle. Then there are formatting buttons.</p>
       <p class="do">Point to the big empty canvas.</p>
       <p>This big area in the middle is the canvas, sometimes called the view. That's where your chart shows up. And it updates the moment you drag something. There's no run button.</p>
       <p class="do">Point to Show Me at the top right.</p>
@@ -149,13 +139,12 @@ body.active:not(.awake) #bar:not(:focus-within) { opacity: .1; }
       <p class="do">Point to the toolbar. Undo, Save, Swap rows and columns, Sort.</p>
       <p>Up in the toolbar, a few buttons you'll use a lot. Undo, which is your best friend. Save. This one swaps Rows and Columns, so you can flip a chart sideways. And these sort largest to smallest or smallest to largest.</p>
       <p class="do">Point to the status bar at the bottom left.</p>
-      <p>And down at the very bottom is the status bar. It tells you how many marks are in your chart, and the sum of anything you select. It's a quick way to check your numbers.</p>
       <p>That's the whole workspace. Don't worry about memorizing it. You'll learn it fast just by using it.</p>
 
       <h3>Try it now, checking the import</h3>
-      <p>Okay, now the Try it now box, checking the import. Before we build anything, I always want to make sure the data came in correctly. Data can get messed up when it moves from one system to another. It's the same habit we had in Module 2, counting rows after a join.</p>
+      <p> Before we build anything, I always want to make sure the data came in correctly. Data can get messed up when it moves from one system to another.</p>
       <p class="do">On Sheet 1. Drag Transactions.txt (Count) onto Text in the Marks card.</p>
-      <p>We're already on Sheet 1. I drag the record count, from the bottom of the Data pane, onto Text in the Marks card. In newer versions it's called Transactions.txt Count. In older versions it's Number of Records. Same thing. And we should see 258,602.</p>
+      <p>We're already on Sheet 1. I drag the Transactions.txt Count, from the bottom of the Data pane, onto Text in the Marks card. And we should see 258,602.</p>
       <p class="do">Drag TR TransDate onto Text. Right click, Measure, Minimum.</p>
       <p>Next, I drag TR TransDate onto Text. It shows the year by default. So I right click it, go to Measure, and pick Minimum. January 1st, 2012.</p>
       <p class="do">Drag TR TransDate again. Change to Maximum.</p>
@@ -164,12 +153,9 @@ body.active:not(.awake) #bar:not(:focus-within) { opacity: .1; }
       <p>And the same for TR CompleteDate. The first one is January 3rd, 2012, and the last one is January 20th, 2016.</p>
       <p>If your numbers match mine, great, your data came in fine.</p>
       <h3>Optional, more check figures</h3>
-      <p>Inside that box there's a small Optional box with a few more sums. You're welcome to try them. Just know those totals don't mean anything as business numbers. They're only there to prove every row made it in.</p>
+      <p>In your notes there are more Optional checks. You're welcome to try them. Just know those totals don't mean anything as business numbers. They're only there to prove every row made it in.</p>
 
-      <h3>Common mistake, dates look wrong</h3>
-      <p>Next is a Common mistake box. If your dates look weird, like the day and month are swapped, your computer's region is probably not set to the US. Go to File, Workbook Locale, More, and choose English, United States. And set it in Text File Properties on the Data Source page too.</p>
-      <h3>Common mistake</h3>
-      <p>And one more small box. You only need to check this one big file. If Transactions comes in fine, the five small files will too.</p>
+      <p>You only need to check this one big file. If Transactions comes in fine, the five small files will too.</p>
       <div class="pause">PAUSE</div>
     </section>
 <section class="seg" id="close" data-label="Closing">

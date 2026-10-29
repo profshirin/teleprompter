@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tutorial 4 prompter</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: full-screen scrolling stage, fixed reading guide in the upper third, toolbar that fades while you talk */
+:root {
+  --bg: #0d1015;
+  --panel: #161b23;
+  --line: #2a313d;
+  --fg: #f3f0e8;
+  --read: #5d6573;
+  --muted: #8a93a3;
+  --cue: #86aedb;
+  --code: #ffd58a;
+  --accent: #e9a23b;
+  --live: #5fd38d;
+  --font-read: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-cue: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --size: 40px;
+  --guide-top: 32vh;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-read); overflow: hidden; }
+
+#stage { position: fixed; inset: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+#script {
+  max-width: 34em; margin: 0 auto; padding: var(--guide-top) 24px 75vh;
+  font-size: var(--size); line-height: 1.45; transition: transform .2s;
+}
+#script.mirror { transform: scaleX(-1); }
+
+#guide {
+  position: fixed; left: 0; right: 0; top: calc(var(--guide-top) - 0.3em); height: 1.9em;
+  font-size: var(--size); pointer-events: none;
+  background: rgba(233,162,59,.08); border-top: 1px solid rgba(233,162,59,.35); border-bottom: 1px solid rgba(233,162,59,.18);
+}
+#guide::before { content: ""; position: absolute; left: 6px; top: 50%; border: 10px solid transparent; border-left: 14px solid var(--accent); transform: translateY(-50%); }
+
+.seg { display: flex; flex-direction: column; gap: .7em; padding-bottom: 1.6em; }
+.seg + .seg { border-top: 1px dashed var(--line); padding-top: 1.4em; }
+.seg h2 { margin: 0; font-size: 1.15em; line-height: 1.2; color: var(--accent); }
+.seg h2 small { display: block; font-family: var(--font-cue); font-size: .38em; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 500; margin-bottom: .4em; }
+.seg h3 { margin: .5em 0 0; font-size: .62em; font-family: var(--font-cue); font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+.seg p { margin: 0; }
+.do { font-family: var(--font-cue); font-size: .5em; line-height: 1.5; color: var(--cue); border-left: 3px solid var(--cue); padding-left: .8em; }
+.do::before { content: "ON SCREEN  "; letter-spacing: .12em; opacity: .7; }
+.code { margin: 0; font-family: var(--font-cue); font-size: .6em; color: var(--code); background: var(--panel); border-radius: 6px; padding: .5em .8em; white-space: pre-wrap; overflow-wrap: anywhere; }
+.pause { align-self: flex-start; font-family: var(--font-cue); font-size: .42em; letter-spacing: .16em; color: var(--bg); background: var(--muted); padding: .25em .7em; border-radius: 99px; }
+.end { text-align: center; color: var(--muted); font-family: var(--font-cue); font-size: .5em; letter-spacing: .2em; padding-top: 2em; }
+
+.w { cursor: pointer; border-radius: 4px; transition: color .25s; }
+.w.read { color: var(--read); }
+.w.now { color: var(--fg); box-shadow: inset 0 -3px 0 var(--accent); }
+
+#bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 5;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 10px 16px;
+  background: linear-gradient(var(--bg) 72%, transparent); font-size: 14px; transition: opacity .4s;
+}
+body.active:not(.awake) #bar:not(:focus-within) { opacity: .1; }
+#bar label { display: flex; align-items: center; gap: 8px; color: var(--muted); font-family: var(--font-cue); font-size: 12px; }
+#bar output { color: var(--fg); min-width: 2.4em; font-variant-numeric: tabular-nums; }
+#bar input[type=range] { width: 100px; accent-color: var(--accent); }
+#home { color: var(--muted); font-family: var(--font-cue); font-size: 12px; text-decoration: none; border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; }
+#home:hover { color: var(--fg); border-color: var(--muted); }
+#bar select, #bar button { font: inherit; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 7px 12px; cursor: pointer; }
+#bar button:hover, #bar select:hover { border-color: var(--muted); }
+#bar :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#listen { background: var(--accent); color: #1a1205; border-color: var(--accent); font-weight: 700; min-width: 9em; }
+#listen.on { background: var(--live); border-color: var(--live); }
+#bar button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+#status { font-family: var(--font-cue); font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 8px; min-width: 0; }
+#dot { width: 9px; height: 9px; border-radius: 50%; background: var(--line); flex: none; }
+#status.on #dot { background: var(--live); animation: pulse 1.4s infinite; }
+#status.err { color: #ff8a7a; }
+#heard { color: var(--fg); opacity: .6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 28ch; }
+@keyframes pulse { 50% { opacity: .35; } }
+#keys { flex-basis: 100%; color: var(--muted); font-family: var(--font-cue); font-size: 11px; }
+#keys kbd { color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; font: inherit; }
+.grow { flex: 1; }
+@media (prefers-reduced-motion: reduce) { #bar, #script, .w { transition: none; } #status.on #dot { animation: none; } }
+</style>
+</head>
+<body>
+<div id="stage">
+<article id="script">
+<section class="seg" id="t4" data-label="Tutorial 4. Dimensions and measures">
+      <h2><small>Tutorial 4</small>Converting between measures and dimensions</h2>
+      <p>Welcome to Tutorial 4, converting between measures and dimensions. This is our last setup step, and it's a quick one.</p>
+      <p>Let's start with two words. A dimension is something you group by, like a name, a code, or a date. A measure is a number you add up or average. In newer Tableau there's just a thin gray line between them. Dimensions above, measures below.</p>
+      <p>Now, Tableau guesses wrong a lot. Any column with numbers comes in as a measure, even an ID code. But adding up customer IDs makes no sense, right? So we fix those by hand.</p>
+      <p class="do">Scan the fields below the gray line.</p>
+      <p>I'll go through each field below the line and ask myself one question. Would I ever add this up or average it?</p>
+      <p class="do">Right click each ID field, Convert to Dimension.</p>
+      <p>These ones are ID codes, so they become dimensions. TR TransNumber, TR Manager, TR EntityID, TR Item. Emp EmployeeID, Ent EntityID, Ent Zip. And Mat Material and Prod Product. For each one, I right click and choose Convert to Dimension. Or you can just drag it above the line.</p>
+      <p>The real numbers stay as measures. Quantity, unit price, subtotal, tax, and our four calculated fields.</p>
+      <p class="do">Right click Emp Order Approval Authority, Hide. Same for Ent RelationshipManager.</p>
+      <p>There are two fields we won't use, Emp Order Approval Authority and Ent RelationshipManager. I right click each one and choose Hide. That keeps things tidy.</p>
+      <p>Last, I take a quick look at the dimensions to see if anything should be a measure. In this data, nothing should.</p>
+      <p>And why does this matter? If TR Item is a measure and you drag it to Rows, Tableau adds up the item codes. As a dimension, it groups by item instead. Same field, completely different chart.</p>
+      <p>Watch out for the opposite problem too. If a real number like Subtotal ever ends up as a dimension, switch it back. Otherwise your chart will list every single value instead of adding them up.</p>
+      <p>Here's something to think about. Pause the video if you like. Unit price is a number, and averaging it makes sense. Transaction number is also a number, but averaging it makes no sense. So what's the real test? And can you find a field in this data that's a bit of an edge case?</p>
+    </section>
+    <section class="seg" id="close" data-label="Closing">
+      <h2><small>Closing</small>That's Tutorial 4</h2>
+      <p>That's it for Tutorial 4, and that's the end of setup. Great job getting through it. Next up, we start building charts. See you there!</p>
+      <p class="end">END OF TUTORIAL 4</p>
+    </section>
+  </article>
+</div>
+<div id="guide" aria-hidden="true"></div>
+
+<div id="bar" role="toolbar" aria-label="Prompter controls">
+  <a id="home" href="index.html">All tutorials</a>
+  <button id="listen" type="button">Start listening</button>
+  <select id="jump" aria-label="Jump to section"></select>
+  <label for="size">Text <input id="size" type="range" min="24" max="80" step="2" value="40"><output id="sizeOut">40</output></label>
+  <button id="mirror" type="button" aria-pressed="false">Mirror</button>
+  <button id="full" type="button">Full screen</button>
+  <button id="top" type="button">Restart</button>
+  <span class="grow"></span>
+  <span id="status"><span id="dot"></span><span id="stateText">Not listening</span><span id="heard"></span></span>
+  <div id="keys"><kbd>Space</kbd> start or stop listening &nbsp; <kbd>←</kbd><kbd>→</kbd> previous or next section &nbsp; <kbd>↓</kbd> skip one line &nbsp; <kbd>+</kbd><kbd>−</kbd> text size &nbsp; <kbd>M</kbd> mirror &nbsp; click any word to jump there</div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const stage = $('stage'), script = $('script'), root = document.documentElement;
+  const segs = [...document.querySelectorAll('.seg')];
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('vprompter.' + k); return v === null ? d : v; } catch { return d; } },
+    set(k, v) { try { localStorage.setItem('vprompter.' + k, v); } catch {} }
+  };
+
+  // Wrap every spoken word in a span. Cues, formulas and headings are skipped.
+  const words = [];
+  const norm = s => s.toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9]+/g, '');
+  document.querySelectorAll('.seg p:not(.do):not(.end)').forEach(p => {
+    const parts = p.textContent.split(/(\s+)/);
+    p.textContent = '';
+    parts.forEach(t => {
+      if (!t.trim()) { p.appendChild(document.createTextNode(t)); return; }
+      const sp = document.createElement('span');
+      sp.className = 'w'; sp.textContent = t; sp.dataset.i = words.length;
+      p.appendChild(sp);
+      words.push({ el: sp, n: norm(t), seg: p.closest('.seg') });
+    });
+  });
+  const segStart = segs.map(s => words.findIndex(w => w.seg === s));
+
+  // Spoken number forms, so "two thousand" and "2000" can both match loosely
+  const numWords = { zero:'0', one:'1', two:'2', three:'3', four:'4', five:'5', six:'6', seven:'7', eight:'8', nine:'9', ten:'10', first:'1', second:'2', third:'3' };
+  function same(a, b) {
+    if (!a || !b) return false;
+    if (a === b) return true;
+    if (numWords[a] === b || numWords[b] === a) return true;
+    if (a.length >= 4 && b.length >= 4 && (a.startsWith(b.slice(0, 4)) && b.startsWith(a.slice(0, 4)))) return true;
+    if (a.length >= 5 && b.length >= 5 && lev(a, b) <= 1) return true;
+    return false;
+  }
+  function lev(a, b) {
+    if (Math.abs(a.length - b.length) > 1) return 2;
+    let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+    for (let i = 1; i <= a.length; i++) {
+      const cur = [i];
+      for (let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      prev = cur;
+    }
+    return prev[b.length];
+  }
+
+  let cur = 0;          // index of the next word to be read
+  function setCur(i, scroll = true) {
+    i = Math.max(0, Math.min(words.length, i));
+    const lo = Math.min(cur, i), hi = Math.max(cur, i);
+    for (let k = lo; k < hi; k++) words[k].el.classList.toggle('read', k < i);
+    words[cur]?.el.classList.remove('now');
+    cur = i;
+    words[cur]?.el.classList.add('now');
+    if (scroll) aimAt(cur);
+    const seg = words[Math.min(cur, words.length - 1)].seg;
+    if (seg && jump.value !== seg.id) jump.value = seg.id;
+  }
+
+  // Match the last few heard words against the script just ahead of the current spot
+  function follow(heardText) {
+    const heard = heardText.split(/\s+/).map(norm).filter(Boolean);
+    if (!heard.length) return;
+    const tail = heard.slice(-5);
+    const from = Math.max(0, cur - 4), to = Math.min(words.length - 1, cur + 45);
+    let best = -1, bestScore = 0;
+    for (let j = from; j <= to; j++) {
+      let score = 0;
+      for (let k = 0; k < tail.length; k++) {
+        const s = j - (tail.length - 1 - k);
+        if (s >= 0 && same(tail[k], words[s].n)) score += words[s].n.length > 2 ? 1 : 0.5;
+      }
+      const dist = Math.abs(j + 1 - cur);
+      const adj = score - dist * 0.012;
+      if (adj > bestScore) { bestScore = adj; best = j; }
+    }
+    const needed = tail.length >= 3 ? 1.8 : 0.9;
+    if (best >= 0 && bestScore >= needed && best + 1 > cur - 3) setCur(best + 1);
+  }
+
+  // Smooth scroll toward the target word
+  let target = 0;
+  function aimAt(i) {
+    const w = words[Math.max(0, Math.min(words.length - 1, i))].el;
+    const guideY = $('guide').getBoundingClientRect().top + 6;
+    target = stage.scrollTop + w.getBoundingClientRect().top - guideY;
+    target = Math.max(0, target);
+  }
+  (function glide() {
+    const d = target - stage.scrollTop;
+    if (Math.abs(d) > 1) stage.scrollTop += d * 0.12;
+    requestAnimationFrame(glide);
+  })();
+  stage.addEventListener('wheel', () => { target = stage.scrollTop; }, { passive: true });
+  stage.addEventListener('touchmove', () => { target = stage.scrollTop; }, { passive: true });
+
+  // Speech recognition
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const listenBtn = $('listen'), status = $('status'), stateText = $('stateText'), heardEl = $('heard');
+  let rec = null, listening = false, lastTail = '';
+  function setState(text, cls) { stateText.textContent = text; status.className = cls || ''; }
+
+  if (!SR) {
+    setState('Voice tracking needs Chrome or Edge on a computer', 'err');
+    listenBtn.disabled = true;
+  } else {
+    rec = new SR();
+    rec.lang = 'en-US'; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 1;
+    rec.onresult = e => {
+      let text = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) text += ' ' + e.results[i][0].transcript;
+      text = text.trim();
+      if (!text || text === lastTail) return;
+      lastTail = text;
+      heardEl.textContent = '“' + text.split(/\s+/).slice(-6).join(' ') + '”';
+      follow(text);
+    };
+    rec.onerror = e => {
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { stopListening(); setState('Microphone blocked. Allow it in the address bar, then try again', 'err'); }
+      else if (e.error === 'network') { setState('Speech service unreachable. Check your internet connection', 'err'); }
+    };
+    rec.onend = () => { if (listening) { try { rec.start(); } catch {} } };
+  }
+  let wake = null;
+  async function startListening() {
+    if (!rec || listening) return;
+    listening = true; lastTail = '';
+    try { rec.start(); } catch {}
+    listenBtn.textContent = 'Stop listening'; listenBtn.classList.add('on');
+    document.body.classList.add('active');
+    setState('Listening', 'on');
+    aimAt(cur);
+    try { wake = await navigator.wakeLock?.request('screen'); } catch {}
+  }
+  function stopListening() {
+    listening = false;
+    try { rec?.stop(); } catch {}
+    listenBtn.textContent = 'Start listening'; listenBtn.classList.remove('on');
+    document.body.classList.remove('active');
+    setState('Not listening'); heardEl.textContent = '';
+    try { wake?.release(); } catch {} wake = null;
+  }
+  listenBtn.addEventListener('click', () => listening ? stopListening() : startListening());
+
+  // Controls
+  const jump = $('jump'), size = $('size');
+  segs.forEach(s => { const o = document.createElement('option'); o.value = s.id; o.textContent = s.dataset.label; jump.appendChild(o); });
+  function setSize(v) { v = Math.max(24, Math.min(80, +v)); size.value = v; $('sizeOut').textContent = v; root.style.setProperty('--size', v + 'px'); store.set('size', v); requestAnimationFrame(() => aimAt(cur)); }
+  function setMirror(on) { script.classList.toggle('mirror', on); $('mirror').setAttribute('aria-pressed', on); store.set('mirror', on ? '1' : '0'); }
+  setSize(store.get('size', 40)); setMirror(store.get('mirror', '0') === '1');
+  size.addEventListener('input', () => setSize(size.value));
+  jump.addEventListener('change', () => setCur(segStart[segs.findIndex(s => s.id === jump.value)]));
+  $('mirror').addEventListener('click', () => setMirror(!script.classList.contains('mirror')));
+  $('top').addEventListener('click', () => setCur(0));
+  $('full').addEventListener('click', async () => { try { document.fullscreenElement ? await document.exitFullscreen() : await root.requestFullscreen(); } catch {} });
+  script.addEventListener('click', e => { const w = e.target.closest('.w'); if (w) setCur(+w.dataset.i); });
+
+  function segIndexOf(i) { const s = words[Math.min(i, words.length - 1)].seg; return segs.indexOf(s); }
+  function nextLine() {
+    const top = words[cur]?.el.getBoundingClientRect().top; if (top == null) return;
+    let i = cur; while (i < words.length && words[i].el.getBoundingClientRect().top <= top + 4) i++;
+    setCur(i);
+  }
+
+  let wakeTimer;
+  document.addEventListener('mousemove', () => { document.body.classList.add('awake'); clearTimeout(wakeTimer); wakeTimer = setTimeout(() => document.body.classList.remove('awake'), 1800); });
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'SELECT' && (e.key === ' ' || e.key.startsWith('Arrow'))) return;
+    switch (e.key) {
+      case ' ': e.preventDefault(); if (e.target.tagName === 'BUTTON') e.target.blur(); listening ? stopListening() : startListening(); break;
+      case 'ArrowRight': case 'PageDown': e.preventDefault(); { const s = segIndexOf(cur); if (s < segs.length - 1) setCur(segStart[s + 1]); } break;
+      case 'ArrowLeft': case 'PageUp': e.preventDefault(); { const s = segIndexOf(cur); setCur(cur - segStart[s] > 8 ? segStart[s] : segStart[Math.max(0, s - 1)]); } break;
+      case 'ArrowDown': e.preventDefault(); nextLine(); break;
+      case 'ArrowUp': e.preventDefault(); setCur(Math.max(0, cur - 12)); break;
+      case '+': case '=': setSize(+size.value + 2); break;
+      case '-': case '_': setSize(+size.value - 2); break;
+      case 'm': case 'M': setMirror(!script.classList.contains('mirror')); break;
+      case 'f': case 'F': $('full').click(); break;
+    }
+  });
+  window.addEventListener('resize', () => aimAt(cur));
+  setCur(0);
+})();
+</script>
+</body>
+</html>
